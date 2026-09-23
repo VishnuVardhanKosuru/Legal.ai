@@ -1,18 +1,27 @@
 /**
  * Validates if the provided text is substantial enough for legal analysis.
- * We want to prevent users from sending trivial text (like "hello") to the AI
- * and wasting resources or getting hallucinatory answers.
+ * Prevents trivial text (like "hello") from being sent to the AI,
+ * saving API resources and avoiding hallucinatory answers.
  */
 export function isValidLegalText(text: string): boolean {
   if (!text || typeof text !== 'string') return false;
-  // A very basic check: at least 50 characters long to be considered a "document" segment
   return text.trim().length >= 50;
 }
 
 /**
- * Strips potentially dangerous HTML from text before processing, 
- * just as a basic sanitization step for the MVP.
+ * Strips potentially dangerous HTML tags from text before processing.
+ * This is a basic XSS / prompt-injection mitigation layer.
  */
 export function sanitizeInput(text: string): string {
   return text.replace(/<[^>]*>?/gm, '');
+}
+
+/**
+ * Truncates a document to a maximum character count to stay within
+ * Gemini context window limits and prevent excessive API costs.
+ */
+export const MAX_DOCUMENT_LENGTH = 100_000; // ~100k chars ≈ ~25k tokens
+export function truncateDocument(text: string): string {
+  if (text.length <= MAX_DOCUMENT_LENGTH) return text;
+  return text.slice(0, MAX_DOCUMENT_LENGTH) + '\n\n[... Document truncated for processing ...]';
 }
