@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GoogleGenAI } from '@google/genai';
-import { sanitizeInput, isValidLegalText } from '@/lib/utils';
+import { sanitizeInput, isValidLegalText, truncateDocument } from '@/lib/utils';
 
 /**
  * Simple in-memory rate limiter.
@@ -14,12 +14,24 @@ function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const timestamps = requestLog.get(ip) || [];
   const recentTimestamps = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  requestLog.set(ip, recentTimestamps);
 
   if (recentTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    requestLog.set(ip, recentTimestamps);
     return true;
   }
+
   recentTimestamps.push(now);
+  requestLog.set(ip, recentTimestamps);
+
+  // Periodic cleanup: remove stale IPs every 100 calls to prevent memory leak
+  if (requestLog.size > 100) {
+    for (const [key, val] of requestLog) {
+      if (val.every(t => now - t >= RATE_LIMIT_WINDOW_MS)) {
+        requestLog.delete(key);
+      }
+    }
+  }
+
   return false;
 }
 
@@ -36,7 +48,7 @@ export async function POST(req: Request) {
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     if (isRateLimited(ip)) {
       return NextResponse.json(
-        { error: 'Too many requests. Please wait a minute before trying again.' },
+        { reply: '⚠️ Too many requests. Please wait a minute before trying again.' },
         { status: 429 }
       );
     }
@@ -54,11 +66,11 @@ export async function POST(req: Request) {
     const { document, documentB, chatHistory, prompt } = await req.json();
 
     if (!prompt || typeof prompt !== 'string') {
-      return NextResponse.json({ error: 'A prompt is required.' }, { status: 400 });
+      return NextResponse.json({ reply: '⚠️ A prompt is required.' }, { status: 400 });
     }
 
-    const sanitizedDoc = sanitizeInput(document || '');
-    const sanitizedDocB = documentB ? sanitizeInput(documentB) : null;
+    const sanitizedDoc = truncateDocument(sanitizeInput(document || ''));
+    const sanitizedDocB = documentB ? truncateDocument(sanitizeInput(documentB)) : null;
     const sanitizedPrompt = sanitizeInput(prompt);
 
     if (!isValidLegalText(sanitizedDoc)) {
@@ -119,7 +131,7 @@ ${documentBlock}`;
   } catch (error: any) {
     console.error('Gemini API Error:', error?.message || error);
     return NextResponse.json(
-      { error: 'An internal error occurred. Please try again later.' },
+      { reply: '⚠️ An internal error occurred. Please try again later.' },
       { status: 500 }
     );
   }

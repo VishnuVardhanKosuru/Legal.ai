@@ -85,18 +85,13 @@ export default function Home() {
         });
 
         const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || data.reply || 'Request failed');
-        }
-
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       } catch (error: any) {
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: `⚠️ ${error.message || 'An error occurred. Please check your API key and try again.'}`,
+            content: '⚠️ A network error occurred. Please check your connection and try again.',
           },
         ]);
       } finally {
