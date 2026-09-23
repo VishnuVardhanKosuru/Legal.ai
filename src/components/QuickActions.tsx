@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import {
   BookOpen,
   AlertTriangle,
@@ -13,65 +13,97 @@ import {
 interface QuickActionsProps {
   onAction: (actionType: string) => void;
   compareMode: boolean;
+  disabled?: boolean;
 }
 
 /**
  * QuickActions — Pre-built prompt shortcut buttons.
- * These map to carefully crafted prompts sent to the AI.
+ * Grounded prompts designed to extract specific legal insights reliably.
  */
-export default function QuickActions({ onAction, compareMode }: QuickActionsProps) {
+function QuickActions({ onAction, compareMode, disabled = false }: QuickActionsProps) {
   return (
-    <div className="quick-actions" role="toolbar" aria-label="Quick analysis actions">
+    <div className="quick-actions" role="toolbar" aria-label="Pre-built legal analysis actions">
       <button
+        type="button"
         id="action-summarize"
         className="action-btn"
         onClick={() => onAction('summarize')}
+        disabled={disabled}
         aria-label="Summarize Document"
+        title="Generate plain-language executive summary of the document"
       >
-        <BookOpen size={16} /> Summarize
+        <BookOpen size={16} aria-hidden="true" />
+        <span>Summarize</span>
       </button>
+
       <button
+        type="button"
         id="action-risks"
         className="action-btn"
         onClick={() => onAction('risks')}
-        aria-label="Identify Risks"
+        disabled={disabled}
+        aria-label="Identify Risks and Liabilities"
+        title="Spot hidden risks, liabilities, and unusual obligations"
       >
-        <AlertTriangle size={16} /> Identify Risks
+        <AlertTriangle size={16} aria-hidden="true" />
+        <span>Identify Risks</span>
       </button>
+
       <button
+        type="button"
         id="action-simplify"
         className="action-btn"
         onClick={() => onAction('simplify')}
-        aria-label="Simplify Terms"
+        disabled={disabled}
+        aria-label="Simplify Legal Terms"
+        title="Translate complex legalese into clear, plain terms"
       >
-        <CheckSquare size={16} /> Simplify Terms
+        <CheckSquare size={16} aria-hidden="true" />
+        <span>Simplify Terms</span>
       </button>
+
       <button
+        type="button"
         id="action-checklist"
         className="action-btn"
         onClick={() => onAction('checklist')}
-        aria-label="Generate Checklist"
+        disabled={disabled}
+        aria-label="Generate Obligations Checklist"
+        title="Create an actionable checklist of duties, deadlines, and deliverables"
       >
-        <ListChecks size={16} /> Checklist
+        <ListChecks size={16} aria-hidden="true" />
+        <span>Checklist</span>
       </button>
+
       {compareMode && (
         <button
+          type="button"
           id="action-compare"
           className="action-btn compare-btn"
           onClick={() => onAction('compare')}
-          aria-label="Compare Documents"
+          disabled={disabled}
+          aria-label="Compare Document A and B"
+          title="Perform clause-by-clause comparison of both documents"
         >
-          <GitCompareArrows size={16} /> Compare
+          <GitCompareArrows size={16} aria-hidden="true" />
+          <span>Compare Docs</span>
         </button>
       )}
+
       <button
+        type="button"
         id="action-lawyer"
         className="action-btn lawyer-btn"
         onClick={() => onAction('lawyer')}
-        aria-label="Questions for Lawyer"
+        disabled={disabled}
+        aria-label="Generate Questions for Lawyer"
+        title="Generate critical questions to ask your attorney before signing"
       >
-        <AlertCircle size={16} /> Questions for Lawyer
+        <AlertCircle size={16} aria-hidden="true" />
+        <span>Questions for Lawyer</span>
       </button>
     </div>
   );
 }
+
+export default memo(QuickActions);

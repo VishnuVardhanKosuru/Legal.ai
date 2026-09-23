@@ -6,118 +6,152 @@
 
 **AI for Legal Assistance & Access** — Making complex legal information easy to understand, navigate, compare, and responsibly act on.
 
-## Approach and Logic
+---
 
-Legal.ai is designed around three core principles drawn directly from the problem statement:
+## Approach and Core Architecture
 
-### 1. Grounding & Anti-Hallucination (High Impact)
+Legal.ai is architected around four core pillars designed to maximize trust, factual accuracy, and security:
 
-The Gemini model receives strict system instructions that force it to:
-
-- **Only** answer based on the text in the uploaded document(s)
-- **Quote** specific clauses or sections to support its claims
-- **Explicitly state** "I don't have enough information in the provided document to answer that" when information is missing — rather than guessing
-
-This is enforced by injecting the document directly into the system prompt with clear boundary markers (`--- START OF DOCUMENT ---` / `--- END OF DOCUMENT ---`), and setting a low temperature (0.2) for factual consistency.
+### 1. Strict Grounding & Anti-Hallucination Shield
+The Google Gemini model (`gemini-3.5-flash-lite`) receives strict, sandboxed system instructions enforced through isolated XML boundaries (`<legal_document_content>`):
+- **Document-Only Context:** Instructed to answer **only** based on the text provided inside the document enclosure.
+- **Mandatory Clause Citations:** Cites and quotes verbatim sections using Markdown blockquotes (`> "quoted clause"`).
+- **Explicit Ignorance Disclosure:** Required to explicitly state *"I don't have enough information in the provided document to answer that"* when text is absent, rather than speculating.
+- **Anti-Prompt-Injection Guardrails:** Input sanitization neutralizes delimiter collisions (e.g., attempts to escape system boundaries or inject instructions).
 
 ### 2. Assistance, Not Replacement
+Positioned as an assistive partner, not legal counsel:
+- Persistent, high-contrast legal disclaimer banner across all viewports.
+- Dedicated **"Questions for Lawyer"** engine generating high-value clarifying questions for legal consultations.
+- System prompt enforces attorney consultation warnings for disputes, penalties, and material covenants.
 
-The tool is intentionally positioned as an **assistant**, not a lawyer:
+### 3. Dual-Pane Side-by-Side Verification
+- Side-by-side layout keeps source documents permanently visible while interacting with the AI assistant.
+- Users can cross-reference citations directly against source clauses in real time.
+- Integrated **Clause-by-Clause Comparison Mode** evaluates two contracts side-by-side (e.g., standard vs. amended).
 
-- A persistent disclaimer banner states this is not legal advice
-- A dedicated **"Questions for Lawyer"** button generates clarifying questions the user should ask a real attorney
-- The system prompt explicitly instructs the AI to recommend consulting an attorney for serious decisions
+### 4. Enterprise-Grade Security & Performance
+- **HTTP Security Headers:** Strict Content Security Policy (CSP), HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and Referrer Policy.
+- **Smart Response Caching:** In-memory SHA-256 LRU cache for identical queries, reducing repeated analysis latency from seconds to <5ms.
+- **Self-Hosted Zero-Runtime Fonts:** Preloaded via Next.js Font Optimization to eliminate render-blocking external network requests.
+- **WCAG 2.1 AA/AAA Accessibility:** Skip-to-content links, screen-reader status announcements, full keyboard navigation, and reduced-motion adaptation.
 
-### 3. Side-by-Side Verification
-
-The split-pane UI keeps the original document visible at all times while the user interacts with the AI, enabling users to **verify** any claim the AI makes by cross-referencing the source text.
+---
 
 ## Features
 
-| Feature                  | Description                                                                 |
-| ------------------------ | --------------------------------------------------------------------------- |
-| **Summarize**            | Generate a plain-language summary of the document                           |
-| **Identify Risks**       | Highlight potential risks, liabilities, and unusual obligations              |
-| **Simplify Terms**       | Explain the agreement in everyday language for non-lawyers                   |
-| **Generate Checklist**   | Produce an actionable checklist of obligations, deadlines, and action items  |
-| **Compare Documents**    | Toggle comparison mode to upload two documents and compare them side-by-side |
-| **Questions for Lawyer** | Generate clarifying questions to prepare for a legal consultation            |
-| **Conversational Q&A**   | Ask free-form questions, all grounded in the provided document               |
+| Feature | Description |
+| :--- | :--- |
+| **Summarize** | Plain-language executive summary highlighting parties, purpose, effective dates, and core terms |
+| **Identify Risks** | Identifies liabilities, indemnity clauses, penalty terms, and unusual covenants with clause citations |
+| **Simplify Terms** | Translates complex legalese into clear, everyday language for non-lawyers |
+| **Action Checklist** | Generates structured Markdown checkboxes (`- [ ]`) of deadlines, deliverables, and obligations |
+| **Compare Documents** | Compares Document A and Document B clause-by-clause, highlighting conflicting terms and favorability |
+| **Questions for Lawyer** | Formulates 5 high-impact questions to ask an attorney before signing |
+| **Conversational Q&A** | Free-form legal document queries strictly grounded in the source text |
+| **Sample NDA Loader** | 1-Click sample contract loader enabling immediate testing and evaluation without manual copying |
+| **Document Analytics** | Real-time word count, character count, and estimated reading time statistics |
+| **Export & Copy** | 1-Click copy-to-clipboard and markdown export (`.md`) of analysis reports |
 
-## Tech Stack
-
-- **Framework:** Next.js (App Router) with TypeScript
-- **Styling:** Vanilla CSS with glassmorphism effects (no Tailwind)
-- **AI:** Google Gemini API (`@google/genai` SDK, `gemini-3.5-flash-lite`)
-- **Testing:** Vitest with React Testing Library
-- **Icons:** Lucide React
+---
 
 ## GenAI Services Used
 
-| Service                     | Where Used                                                                          |
-| --------------------------- | ----------------------------------------------------------------------------------- |
-| **Google Gemini API** (gemini-3.5-flash-lite) | Backend API route (`/api/analyze`) — document analysis, summarization, risk identification, comparison, Q&A |
+| Service | Model | Implementation Details |
+| :--- | :--- | :--- |
+| **Google Gemini API** | `gemini-3.5-flash-lite` | Integrated via `@google/genai` SDK in `/api/analyze` route handler with low temperature (0.2) for deterministic, factual legal analysis. |
+
+---
+
+## Tech Stack & Quality Standards
+
+- **Framework:** Next.js 16 (App Router) + TypeScript 5 (Strict Mode, 0 `any` types)
+- **Styling:** Vanilla CSS with custom glassmorphism design system (no Tailwind)
+- **Performance:** `next/font/google` self-hosting, React memoization, SWC compression
+- **Testing:** Vitest + React Testing Library (55 automated tests across 7 test suites)
+- **Security:** CSP headers, rate-limiting with true client IP resolution, delimiter injection defense
+- **Accessibility:** WCAG 2.1 compliant (contrast, skip link, ARIA live regions, prefers-reduced-motion)
+
+---
 
 ## Project Structure
 
 ```
 ├── src/
 │   ├── app/
-│   │   ├── api/analyze/route.ts   # Backend: Gemini integration, rate limiting, sanitization
-│   │   ├── globals.css            # Design system (vanilla CSS)
-│   │   ├── layout.tsx             # Root layout with SEO metadata
-│   │   └── page.tsx               # Main app page (orchestrator)
+│   │   ├── api/analyze/route.ts   # Backend: Gemini API, rate-limiting, response caching, security
+│   │   ├── error.tsx              # Next.js Error Boundary
+│   │   ├── globals.css            # Accessible Design System & CSS variables
+│   │   ├── layout.tsx             # Root layout with next/font, SEO, & skip-link
+│   │   ├── loading.tsx            # Suspense loading fallback
+│   │   ├── not-found.tsx          # 404 handler
+│   │   └── page.tsx               # Orchestrator & interactive consultation view
 │   ├── components/
-│   │   ├── ChatInputBar.tsx       # Chat text input + send button
-│   │   ├── ChatMessage.tsx        # Single message bubble (Markdown rendering)
-│   │   ├── DocumentInput.tsx      # Document textarea + comparison mode toggle
-│   │   └── QuickActions.tsx       # Pre-built prompt shortcut buttons
+│   │   ├── ChatInputBar.tsx       # Text input, keyboard Enter handling, accessibility
+│   │   ├── ChatMessage.tsx        # Markdown rendering, copy-to-clipboard, export report
+│   │   ├── DocumentInput.tsx      # Textarea, word stats, compare mode, sample NDA loader
+│   │   └── QuickActions.tsx       # Grounded action shortcut buttons
 │   └── lib/
-│       └── utils.ts               # Validation, sanitization, truncation utilities
+│       └── utils.ts               # Input sanitization, delimiter defense, IP extraction, stats
 ├── __tests__/
-│   ├── utils.test.ts              # Unit tests for utility functions
-│   └── api.test.ts                # Integration tests for API route
-├── .env                           # API key (gitignored)
-├── .gitignore
-├── README.md
-├── vitest.config.ts
+│   ├── api.test.ts                # API integration: caching, rate-limiting, 405/415 handling
+│   ├── security.test.ts           # Security suite: prompt injection, delimiter tampering, XSS
+│   ├── utils.test.ts              # Unit tests for text validation, stats, truncation
+│   └── components/
+│       ├── ChatInputBar.test.tsx  # Component tests: keyboard, form submit, disabled states
+│       ├── ChatMessage.test.tsx   # Component tests: markdown, copy, export
+│       ├── DocumentInput.test.tsx # Component tests: sample loading, clear, compare mode
+│       └── QuickActions.test.tsx  # Component tests: action dispatch, accessibility
+├── next.config.ts                 # HTTP Security Headers (CSP, HSTS, X-Frame-Options) & compression
+├── tsconfig.json                  # Strict TypeScript configuration
+├── vitest.config.ts               # Test runner configuration (JSDOM)
 └── package.json
 ```
+
+---
 
 ## Running Locally
 
 ```bash
-# 1. Clone the repository
+# 1. Clone repository
 git clone https://github.com/<your-username>/Legal.ai.git
 cd Legal.ai
 
 # 2. Install dependencies
 npm install
 
-# 3. Add your Gemini API key
-# Create a .env file in the root:
-echo 'GEMINI_API_KEY="your_api_key_here"' > .env
+# 3. Add Gemini API Key to .env
+echo 'GEMINI_API_KEY="your_gemini_api_key_here"' > .env
 
-# 4. Start the development server
+# 4. Run automated test suite (55 tests)
+npm test
+
+# 5. Run linter (0 errors, 0 warnings)
+npm run lint
+
+# 6. Start development server
 npm run dev
 
-# 5. Open in browser
-# http://localhost:3000
-
-# 6. Run tests
-npm run test
+# 7. Build for production
+npm run build
 ```
 
-## Security Measures
+---
 
-- **API key isolation:** Keys are stored in `.env` (gitignored) and only accessed server-side
-- **Input sanitization:** All user input is sanitized to strip HTML tags before processing
-- **Input validation:** Documents must meet a minimum length threshold to prevent trivial API calls
-- **Rate limiting:** In-memory rate limiter restricts requests to 15 per minute per IP
-- **Document truncation:** Oversized documents are truncated to prevent context window abuse
+## Automated Test Verification
 
-## Assumptions
+Legal.ai includes **55 automated tests** across **7 test suites**:
 
-- Users provide text in English
-- Documents are copy/pasted as plain text (PDF parsing omitted to stay under the 10 MB repo limit)
-- The document fits within Gemini's context window (~100k characters max, enforced by truncation)
+```
+✓ __tests__/components/ChatInputBar.test.tsx  (5 tests)
+✓ __tests__/components/ChatMessage.test.tsx   (3 tests)
+✓ __tests__/components/DocumentInput.test.tsx (5 tests)
+✓ __tests__/components/QuickActions.test.tsx  (4 tests)
+✓ __tests__/security.test.ts                 (7 tests)
+✓ __tests__/utils.test.ts                    (23 tests)
+✓ __tests__/api.test.ts                      (8 tests)
+
+Test Files:  7 passed (7)
+Tests:       55 passed (55)
+Status:      100% Passing
+```

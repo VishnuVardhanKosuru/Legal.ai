@@ -8,31 +8,31 @@ import QuickActions from '@/components/QuickActions';
 import ChatInputBar from '@/components/ChatInputBar';
 
 /** Shape of a single chat message. */
-type Message = {
+export interface Message {
   role: 'user' | 'assistant';
   content: string;
-};
+}
 
 /** Maps quick-action types to carefully crafted prompts. */
 const ACTION_PROMPTS: Record<string, string> = {
   summarize:
-    'Please provide a clear, plain-language summary of this document. Highlight the purpose, parties involved, and key terms.',
+    'Please provide a clear, plain-language summary of this document. Highlight the primary purpose, parties involved, effective dates, and core obligations.',
   risks:
-    'Identify all potential risks, liabilities, penalties, or unusual obligations in this document. For each risk, quote the relevant clause.',
+    'Identify all potential risks, liabilities, indemnification terms, penalties, or unusual obligations in this document. For each identified risk, quote the relevant clause verbatim.',
   simplify:
-    'Explain the core purpose and terms of this agreement in simple, everyday language that a non-lawyer can understand.',
+    'Explain the core purpose and critical terms of this agreement in simple, everyday language that a non-lawyer can easily understand.',
   checklist:
-    'Generate a structured checklist of all obligations, deadlines, and action items from this document. Use checkboxes (- [ ]) in Markdown.',
+    'Generate a comprehensive structured checklist of all obligations, key deadlines, deliverables, and action items from this document. Format as Markdown checkboxes (- [ ]).',
   compare:
-    'Compare Document A and Document B clause-by-clause. Highlight any differences, conflicts, missing terms, or terms that are more favorable in one document vs. the other. Present this in a table format.',
+    'Compare Document A and Document B clause-by-clause. Highlight any differences, conflicting terms, missing covenants, or clauses that are noticeably more favorable to one party over the other. Present this in a structured Markdown comparison table.',
   lawyer:
-    'Based on this document, what are 5 important clarifying questions I should ask a qualified legal professional before signing or agreeing? Explain why each question matters.',
+    'Based on this document, what are 5 critical clarifying questions I should ask a qualified legal professional before signing or agreeing? Explain why each question matters.',
 };
 
 const WELCOME_MESSAGE: Message = {
   role: 'assistant',
   content:
-    "Welcome to **Legal.ai**! 👋\n\nPaste a legal document on the left, and I'll help you:\n- **Summarize** it in plain language\n- **Identify risks** and obligations\n- **Generate a checklist** of action items\n- **Compare** two documents side-by-side\n- Prepare **questions for your lawyer**\n\nI answer *only* based on the text you provide — no guessing.",
+    "### Welcome to Legal.ai ⚖️\n\nI am your AI Legal Assistant powered by **Google Gemini**. Paste any contract, agreement, or policy on the left—or click **'Sample NDA'** to test immediately.\n\n**What I can do:**\n- 📑 **Summarize** complex agreements in plain English\n- ⚠️ **Identify Risks** and hidden liabilities with exact clause citations\n- 🔄 **Compare Documents** clause-by-clause (toggle *Compare* mode)\n- ✅ **Generate Action Checklists** of all deadlines and obligations\n- 🧑‍⚖️ **Formulate Questions** for your lawyer before you sign\n\n*All analysis is strictly grounded in the document you provide.*",
 };
 
 export default function Home() {
@@ -47,28 +47,32 @@ export default function Home() {
   /** Auto-scroll chat to the bottom when new messages arrive. */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   /**
    * Sends a message to the /api/analyze backend and appends the response.
-   * Handles both free-text questions and quick-action prompts.
    */
   const handleSendMessage = useCallback(
     async (userMessage: string = input) => {
-      if (!userMessage.trim()) return;
+      const trimmed = userMessage.trim();
+      if (!trimmed) return;
 
       if (!documentText.trim()) {
         setMessages((prev) => [
           ...prev,
-          { role: 'user', content: userMessage },
-          { role: 'assistant', content: 'Please paste a legal document on the left before asking a question.' },
+          { role: 'user', content: trimmed },
+          {
+            role: 'assistant',
+            content:
+              '⚠️ **Please paste a legal document on the left** (or click the **"Sample NDA"** button) before asking a question or running an analysis.',
+          },
         ]);
         setInput('');
         return;
       }
 
-      const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
-      setMessages(newMessages);
+      const updatedHistory: Message[] = [...messages, { role: 'user', content: trimmed }];
+      setMessages(updatedHistory);
       setInput('');
       setIsLoading(true);
 
@@ -79,36 +83,51 @@ export default function Home() {
           body: JSON.stringify({
             document: documentText,
             documentB: compareMode ? documentBText : undefined,
-            chatHistory: newMessages,
-            prompt: userMessage,
+            chatHistory: updatedHistory,
+            prompt: trimmed,
           }),
         });
 
-        const data = await response.json();
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-      } catch (error: any) {
+        const data: { reply?: string } = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.reply || `Request failed with status ${response.status}`);
+        }
+
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: '⚠️ A network error occurred. Please check your connection and try again.',
+            content: data.reply || 'No response returned from the assistant.',
+          },
+        ]);
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'A network error occurred. Please check your connection and try again.';
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: 'assistant',
+            content: `⚠️ ${errorMessage}`,
           },
         ]);
       } finally {
         setIsLoading(false);
       }
     },
-    [input, documentText, documentBText, compareMode, messages],
+    [input, documentText, documentBText, compareMode, messages]
   );
 
-  /** Handles quick-action button clicks by mapping to a predefined prompt. */
+  /** Handles quick-action clicks */
   const handleAction = useCallback(
     (actionType: string) => {
       const prompt = ACTION_PROMPTS[actionType];
       if (!prompt) return;
       handleSendMessage(prompt);
     },
-    [handleSendMessage],
+    [handleSendMessage]
   );
 
   return (
@@ -118,15 +137,16 @@ export default function Home() {
         <h1>
           <Scale size={24} aria-hidden="true" /> Legal.ai
         </h1>
-        <span className="header-subtitle">AI-Powered Legal Document Assistant</span>
+        <span className="header-subtitle">Intelligent Legal Document Assistant • Powered by Google Gemini</span>
       </header>
 
-      {/* Disclaimer banner */}
-      <div className="disclaimer-banner" role="status">
-        ⚖️ This tool provides information only — it does not constitute legal advice. Always consult a qualified attorney for legal decisions.
-      </div>
+      {/* Persistent Disclaimer Banner */}
+      <aside className="disclaimer-banner" role="status" aria-label="Legal Disclaimer">
+        ⚖️ <strong>Informational Use Only:</strong> Legal.ai assists in understanding documents and does not constitute formal legal counsel. Always consult a licensed attorney for binding legal matters.
+      </aside>
 
-      <main className="main-content">
+      {/* Main Content Area */}
+      <main id="main-content" className="main-content">
         {/* Left Pane: Document Input */}
         <DocumentInput
           documentText={documentText}
@@ -138,19 +158,29 @@ export default function Home() {
         />
 
         {/* Right Pane: AI Assistant Chat */}
-        <section className="pane glass chat-container" aria-label="AI Chat Assistant">
+        <section
+          className="pane glass chat-container"
+          aria-label="AI Legal Assistant Interaction"
+          aria-busy={isLoading}
+        >
           <div className="document-header">
-            <span>💬 AI Assistant</span>
+            <span>💬 Legal Assistant Consultation</span>
           </div>
 
-          <div className="chat-history" role="list" aria-live="polite">
+          <div
+            className="chat-history"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions text"
+          >
             {messages.map((msg, idx) => (
-              <ChatMessage key={idx} role={msg.role} content={msg.content} />
+              <ChatMessage key={`msg-${idx}`} role={msg.role} content={msg.content} />
             ))}
+
             {isLoading && (
-              <div className="message assistant" role="listitem">
+              <div className="message assistant" role="listitem" aria-label="Assistant analyzing">
                 <div className="message-bubble">
-                  <div className="typing-indicator" aria-label="Assistant is typing">
+                  <div className="typing-indicator" aria-label="Analyzing document...">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -161,8 +191,14 @@ export default function Home() {
             <div ref={messagesEndRef} />
           </div>
 
-          <QuickActions onAction={handleAction} compareMode={compareMode} />
+          {/* Quick Action Shortcuts */}
+          <QuickActions
+            onAction={handleAction}
+            compareMode={compareMode}
+            disabled={isLoading}
+          />
 
+          {/* Chat Input Bar */}
           <ChatInputBar
             input={input}
             onInputChange={setInput}
