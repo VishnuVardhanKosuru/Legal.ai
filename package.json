@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "docker:build": "docker build -t legal-ai .",
+    "docker:run": "docker run -p 8080:8080 legal-ai",
+    "deploy:gcp": "gcloud run deploy legal-ai --source . --region us-central1 --allow-unauthenticated",
+    "deploy:cloudbuild": "gcloud builds submit --config cloudbuild.yaml ."
   },
   "dependencies": {
     "@google/genai": "^2.24.0",

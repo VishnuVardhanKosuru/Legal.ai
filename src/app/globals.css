@@ -593,6 +593,50 @@ body {
   }
 }
 
+/* ====== SYSTEM STATE CONTAINERS (ERROR, LOADING, NOT-FOUND) ====== */
+.system-state-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem;
+  text-align: center;
+  background: var(--background);
+}
+
+.system-state-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.system-state-desc {
+  color: var(--text-muted);
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+
+.system-state-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.system-state-btn:hover {
+  background: var(--primary-hover);
+}
+
 /* Reduced motion preference support */
 @media (prefers-reduced-motion: reduce) {
   *,

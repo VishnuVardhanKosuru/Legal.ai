@@ -4,36 +4,13 @@ import { Scale } from 'lucide-react';
 
 export default function NotFound() {
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '2rem',
-        textAlign: 'center',
-        background: '#f8fafc',
-      }}
-    >
+    <div className="system-state-page">
       <Scale size={48} color="#2563eb" style={{ marginBottom: '1rem' }} />
-      <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#0f172a', marginBottom: '0.5rem' }}>
-        404 — Page Not Found
-      </h1>
-      <p style={{ color: '#475569', maxWidth: '440px', marginBottom: '1.5rem' }}>
+      <h1 className="system-state-title">404 — Page Not Found</h1>
+      <p className="system-state-desc">
         The page you are looking for does not exist. Return to the Legal.ai home dashboard to analyze your contracts.
       </p>
-      <Link
-        href="/"
-        style={{
-          padding: '0.6rem 1.25rem',
-          background: '#2563eb',
-          color: '#ffffff',
-          borderRadius: '8px',
-          textDecoration: 'none',
-          fontWeight: 600,
-        }}
-      >
+      <Link href="/" className="system-state-btn">
         Back to Dashboard
       </Link>
     </div>

@@ -15,43 +15,14 @@ export default function ErrorBoundary({
   }, [error]);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        padding: '2rem',
-        textAlign: 'center',
-        background: '#f8fafc',
-      }}
-      role="alert"
-    >
+    <div className="system-state-page" role="alert">
       <AlertOctagon size={48} color="#dc2626" style={{ marginBottom: '1rem' }} />
-      <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: '#0f172a' }}>
-        An Unexpected Error Occurred
-      </h2>
-      <p style={{ color: '#475569', maxWidth: '480px', marginBottom: '1.5rem' }}>
+      <h2 className="system-state-title">An Unexpected Error Occurred</h2>
+      <p className="system-state-desc">
         Legal.ai encountered an issue while loading. Please try refreshing or resetting the application state.
       </p>
-      <button
-        type="button"
-        onClick={() => reset()}
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.6rem 1.25rem',
-          background: '#2563eb',
-          color: '#ffffff',
-          border: 'none',
-          borderRadius: '8px',
-          fontWeight: 600,
-          cursor: 'pointer',
-        }}
-      >
-        <RotateCcw size={16} />
+      <button type="button" onClick={() => reset()} className="system-state-btn">
+        <RotateCcw size={16} aria-hidden="true" />
         <span>Try Again</span>
       </button>
     </div>

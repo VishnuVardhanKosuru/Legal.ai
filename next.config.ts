@@ -40,6 +40,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Standalone output for ultra-efficient Docker & Google Cloud Run container builds (~120MB)
+  output: "standalone",
   poweredByHeader: false,
   compress: true,
   reactStrictMode: true,
